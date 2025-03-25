@@ -1,0 +1,20 @@
+[project]
+name = "contextualshap"
+version = "0.1.0"
+description = "GPT naration for SHAP."
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    { name = "Sergio Ryan", email = "sergioryan@potatobeans.id" },
+    { name = "Latifa Dwiyanti" },
+]
+dependencies = [
+    "shap>=0.46.0",
+    "openai>=1.64.0",
+    "pandas>=2.0.0"
+]
+
+[build-system]
+requires = ["poetry-core>=2.0"]
+build-backend = "poetry.core.masonry.api"
