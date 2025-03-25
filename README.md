@@ -32,7 +32,8 @@ shap_values = explainer(X)
 From the generated `shap_values`, per-feature narration can be generated.
 
 ```python
-import contextualshap
+import contextualshap.gpt
+import contextualshap.plots
 
 # Optional feature aliases
 feature_aliases = {
@@ -47,6 +48,10 @@ feature_descriptions = {
     'AveOccup': 'Average number of occupancies',
 }
 
+# Draw a waterfall plot with feature aliases, taking the first SHAP value for example
+contextualshap.plots.waterfall(shap_values[0], feature_aliases=feature_aliases, max_display=14)
+
+# Explain using the first 10 sample SHAP values
 summary, feature_explanations = contextualshap.gpt.explain(shap_values[:10], feature_aliases, feature_descriptions, openai_api_key='<your-api-key>')
 print(summary)
 print(feature_explanations)

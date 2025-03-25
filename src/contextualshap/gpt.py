@@ -26,6 +26,20 @@ def _table(list_of_dicts):
 
 
 def explain(shap_values: list[shap.Explanation], feature_aliases: dict, feature_descriptions: dict, openai_api_key = None, gpt_model = 'gpt-4o', additional_background = None):
+    """
+    Generates an explanation for each features according to the SHAP values. The generated narration can be displayed to
+    end-users to better help end-users understand about the result of the SHAP values. Can be paired with SHAP visualizations
+    to increase user experience.
+
+    :param shap_values: a list of SHAP values, please take only a few SHAP values to avoid OpenAI API token limit
+    :param feature_aliases: an optional dictionary containing alias per feature, to increase explanation clarity
+    :param feature_descriptions: an optional dictionary containing description per feature, to increase explanation clarity
+    :param openai_api_key: OpenAI API key string
+    :param gpt_model: the OpenAI GPT model
+    :param additional_background: additional narration containing background story of the model to increase explanation power
+    :return: summary (a string) anf a list of dictionary containing descriptions for each feature names
+    """
+
     prompt_feature_aliases = []
     prompt_shap_values = []
     for f in shap_values[0].feature_names:
