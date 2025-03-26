@@ -52,7 +52,7 @@ feature_descriptions = {
 contextualshap.plots.waterfall(shap_values[0], feature_aliases=feature_aliases, max_display=14)
 
 # Explain using the first 10 sample SHAP values
-summary, feature_explanations = contextualshap.gpt.explain(shap_values[:10], feature_aliases, feature_descriptions, openai_api_key='<your-api-key>')
+summary, feature_explanations = contextualshap.gpt.explain(shap_values[:10], feature_aliases, feature_descriptions, openai_api_key='<your-api-key>', additional_background='This model trains on the California housing price dataset. It tries to predict the house price from the features.', language='id')
 print(summary)
 print(feature_explanations)
 ```
