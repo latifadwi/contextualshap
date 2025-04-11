@@ -97,7 +97,7 @@ feature_aliases = {
 }
 
 # Draw a bar plot with feature aliases, taking the first SHAP value for example
-explanation = contextualshap.plots.bar(explainer, feature_aliases=feature_aliases, max_display=14, openai_api_key='<your-api-key>')
+explanation = contextualshap.plots.bar(shap_values, feature_aliases=feature_aliases, max_display=14, openai_api_key='<your-api-key>')
 print(explanation)
 ```
 
