@@ -70,7 +70,9 @@ def waterfall(explanation: shap.Explanation, feature_aliases=None, feature_descr
     **kwargs is passed to shap.plots.waterfall function to modify the function.
 
     :param explanation: a shap.Explanation instance retrieved from calling shap explainer.
-    :param feature_aliases: a dictionary mapping of old feature name to new feature name.
+    :param feature_aliases: an optional dictionary mapping of old feature name to new feature name.
+    :param feature_descriptions: an optional dictionary mapping of old feature name to description.
+    :param additional_background: an optional background string to be given to GPT to enhance explanation.
     :param show: setting this to false will not call plot.show to show the plot.
     :param explain: setting this to false will not call OpenAI API to retrieve the plot explanation, so API key, GPT model, and language parameters are not used. Nothing will be returned if explain is False.
     :param openai_api_key: an OpenAI API key to use for API calls.
@@ -167,6 +169,24 @@ def _explain_bar(image, feature_names, feature_aliases=None, feature_description
     return response['explanation']
 
 def bar(shap_values, feature_aliases=None, feature_descriptions=None, additional_background=None, explain=True, show=True, openai_api_key=None, gpt_model = 'gpt-4o', language = 'en', **kwargs):
+    """
+        Displays a SHAP bar plot. This is a utility wrapper function that accepts feature aliases dictionary
+        to easily alias some feature names that are otherwise retrieved by default through shap_values.feature_names.
+        By setting explain to True, this function will also return a string of narration containing explanation about the bar plot.
+        **kwargs is passed to shap.plots.bar function to modify the function.
+
+        :param shap_values: a shap.Explanation or shap.Cohorts or dictionary of shap.Explanation instance retrieved from calling shap explainer.
+        :param feature_aliases: an optional dictionary mapping of old feature name to new feature name.
+        :param feature_descriptions: an optional dictionary mapping of old feature name to description.
+        :param additional_background: an optional background string to be given to GPT to enhance explanation.
+        :param show: setting this to false will not call plot.show to show the plot.
+        :param explain: setting this to false will not call OpenAI API to retrieve the plot explanation, so API key, GPT model, and language parameters are not used. Nothing will be returned if explain is False.
+        :param openai_api_key: an OpenAI API key to use for API calls.
+        :param gpt_model: a GPT model to use.
+        :param language: a language code to use.
+        :return: anything returned  by shap.plots.waterfall, especially in the case of setting `show=False`.
+        """
+
     if feature_aliases is None:
         feature_aliases = {}
 
