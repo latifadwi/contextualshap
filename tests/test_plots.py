@@ -20,7 +20,7 @@ class PlotsTestCase(unittest.TestCase):
 
         sample_ind = 0
         # This will fail without a valid OpenAI API key
-        # print(plots.waterfall(shap_values[sample_ind], max_display=14, openai_api_key=''))
+        # print(plots.waterfall(shap_values[sample_ind], feature_descriptions={'MedInc': 'Median income'}, max_display=14, openai_api_key=''))
 
     def test_bar(self):
         # a classic housing price dataset
