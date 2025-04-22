@@ -8,16 +8,23 @@ from openai import OpenAI
 from .common import _table, languages
 
 
-def _explain_waterfall(image, base_value, feature_names, feature_aliases=None, feature_descriptions=None, additional_background=None, openai_api_key=None, gpt_model = 'gpt-4o', language = 'en'):
+def _explain_waterfall(image, explanation: shap.Explanation, feature_aliases=None, feature_descriptions=None, additional_background=None, openai_api_key=None, gpt_model = 'gpt-4o', language = 'en'):
     if language not in languages:
         raise ValueError("Language must be one of: " + ", ".join(languages))
+
+    if hasattr(explanation.base_values, "__len__"):
+        # TODO: document what should happen if base_values is a vector
+        raise ValueError("Explanation base values is a list, currently unsupported")
+    else:
+        prediction = explanation.base_values
 
     client = OpenAI(api_key=openai_api_key)
 
     bi = base64.b64encode(image).decode()
     prompt_features = []
 
-    for f in feature_names:
+    i = 0
+    for f in explanation.feature_names:
         desc = ''
         if feature_descriptions is not None and f in feature_descriptions:
             desc = feature_descriptions[f]
@@ -27,8 +34,8 @@ def _explain_waterfall(image, base_value, feature_names, feature_aliases=None, f
             alias = feature_aliases[f]
 
         prompt_features.append(
-            {'Feature Name': f, 'Feature Alias': alias, 'Feature Description': desc})
-
+            {'Feature Name': f, 'Feature Alias': alias, 'Feature Description': desc, 'SHAP Value': str(explanation.values[i]), 'Sample Value': str(explanation.data[i])})
+        i = i + 1
 
     completion = client.chat.completions.create(
         model=gpt_model,
@@ -41,8 +48,8 @@ def _explain_waterfall(image, base_value, feature_names, feature_aliases=None, f
                         "text": f"""
             SHAP refers to SHapley Additive exPlanations. Refer to the "A Unified Approach to Interpreting Model Predictions" paper by Scott Lundberg. This is about AI model training.
             Your job is to output an easy explanation about the image in the context of the SHAP values to better explain to readers the meaning of the waterfall plot.
-            The given image is a waterfall plot of a single prediction sample in the dataset. The result of the prediction of this sample of the dataset is {base_value}.
-            {'' if len(prompt_features) == 0 else f'Alias and description of the feature names:\n{_table(prompt_features)}\n'}
+            The given image is a waterfall plot of a single prediction sample in the dataset. The result of the prediction of this sample of the dataset is {prediction}.
+            {'' if len(prompt_features) == 0 else f'Alias and description of the feature names:\n{_table(prompt_features)}\nThe feature description sometimes explain what the values mean, and you must include the explanation for the values in the result.\n'}
             {'' if additional_background is None else f'Context background of this model to be included in the explanation: {additional_background}.'}
             Reply in {languages[language]} language. Give explanation for each feature name and the SHAP values for amateur readers. Also add some more explanation or context that you know.
             Output is only a JSON object with a string field `explanation` containing the explanation.
@@ -104,13 +111,7 @@ def waterfall(explanation: shap.Explanation, feature_aliases=None, feature_descr
         if show:
             plt.show()
 
-        if hasattr(nsv.base_values, "__len__"):
-            # TODO: document what should happen if base_values is a vector
-            pass
-        else:
-            prediction = nsv.base_values
-
-        return _explain_waterfall(data, prediction, nsv.feature_names, feature_aliases, feature_descriptions, additional_background, openai_api_key, gpt_model, language)
+        return _explain_waterfall(data, explanation, feature_aliases, feature_descriptions, additional_background, openai_api_key, gpt_model, language)
     else:
         if show:
             plt.show()
