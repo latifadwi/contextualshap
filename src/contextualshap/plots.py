@@ -5,12 +5,17 @@ import matplotlib.pyplot as plt
 import base64
 import json
 from openai import OpenAI
-from .common import _table, languages
+from .common import _table, languages, readers
 
 
-def _explain_waterfall(image, explanation: shap.Explanation, feature_aliases=None, feature_descriptions=None, additional_background=None, openai_api_key=None, gpt_model = 'gpt-4o', language = 'en'):
+def _explain_waterfall(image, explanation: shap.Explanation, feature_aliases=None, feature_descriptions=None,
+                       additional_background=None, openai_api_key=None, gpt_model='gpt-4o', language='en',
+                       reader='general'):
     if language not in languages:
         raise ValueError("Language must be one of: " + ", ".join(languages))
+
+    if reader not in readers:
+        raise ValueError("Reader must be one of: " + ", ".join(readers))
 
     if hasattr(explanation.base_values, "__len__"):
         # TODO: document what should happen if base_values is a vector
@@ -34,7 +39,8 @@ def _explain_waterfall(image, explanation: shap.Explanation, feature_aliases=Non
             alias = feature_aliases[f]
 
         prompt_features.append(
-            {'Feature Name': f, 'Feature Alias': alias, 'Feature Description': desc, 'SHAP Value': str(explanation.values[i]), 'Sample Value': str(explanation.data[i])})
+            {'Feature Name': f, 'Feature Alias': alias, 'Feature Description': desc,
+             'SHAP Value': str(explanation.values[i]), 'Sample Value': str(explanation.data[i])})
         i = i + 1
 
     completion = client.chat.completions.create(
@@ -48,6 +54,7 @@ def _explain_waterfall(image, explanation: shap.Explanation, feature_aliases=Non
                         "text": f"""
             SHAP refers to SHapley Additive exPlanations. Refer to the "A Unified Approach to Interpreting Model Predictions" paper by Scott Lundberg. This is about AI model training.
             Your job is to output an easy explanation about the image in the context of the SHAP values to better explain to readers the meaning of the waterfall plot.
+            f{readers[reader]}
             The given image is a waterfall plot of a single prediction sample in the dataset. The result of the prediction of this sample of the dataset is {prediction}.
             {'' if len(prompt_features) == 0 else f'Alias and description of the feature names:\n{_table(prompt_features)}\nThe feature description sometimes explain what the values mean, and you must include the explanation for the values in the result.\n'}
             {'' if additional_background is None else f'Context background of this model to be included in the explanation: {additional_background}.'}
@@ -69,11 +76,14 @@ def _explain_waterfall(image, explanation: shap.Explanation, feature_aliases=Non
     response = json.loads(completion.choices[0].message.content)
     return response['explanation']
 
-def waterfall(explanation: shap.Explanation, feature_aliases=None, feature_descriptions=None, additional_background=None, show=True, explain=True, openai_api_key=None, gpt_model = 'gpt-4o', language = 'en', **kwargs):
+
+def waterfall(explanation: shap.Explanation, feature_aliases=None, feature_descriptions=None,
+              additional_background=None, show=True, explain=True, openai_api_key=None, gpt_model='gpt-4o',
+              language='en', reader='general', **kwargs):
     """
     Displays a SHAP waterfall plot. This is a utility wrapper function that accepts feature aliases dictionary
     to easily alias some feature names that are otherwise retrieved by default through explanation.feature_names.
-    By setting explain to True, this function will also return a string of narration containing explanation about the waterfall plot.
+    By setting `explain` to True, this function will also return a string of narration containing explanation about the waterfall plot.
     **kwargs is passed to shap.plots.waterfall function to modify the function.
 
     :param explanation: a shap.Explanation instance retrieved from calling shap explainer.
@@ -85,7 +95,8 @@ def waterfall(explanation: shap.Explanation, feature_aliases=None, feature_descr
     :param openai_api_key: an OpenAI API key to use for API calls.
     :param gpt_model: a GPT model to use.
     :param language: a language code to use.
-    :return: anything returned  by shap.plots.waterfall, especially in the case of setting `show=False`.
+    :param reader: the reader level of comprehension, can be 'general' or 'expert'
+    :return: anything returned by shap.plots.waterfall, especially in the case of setting `show=False`.
     """
     if feature_aliases is None:
         feature_aliases = {}
@@ -111,14 +122,21 @@ def waterfall(explanation: shap.Explanation, feature_aliases=None, feature_descr
         if show:
             plt.show()
 
-        return _explain_waterfall(data, explanation, feature_aliases, feature_descriptions, additional_background, openai_api_key, gpt_model, language)
+        return _explain_waterfall(data, explanation, feature_aliases, feature_descriptions, additional_background,
+                                  openai_api_key, gpt_model, language, reader)
     else:
         if show:
             plt.show()
+        return None
 
-def _explain_bar(image, feature_names, feature_aliases=None, feature_descriptions=None, additional_background=None, openai_api_key=None, gpt_model = 'gpt-4o', language = 'en'):
+
+def _explain_bar(image, feature_names, feature_aliases=None, feature_descriptions=None, additional_background=None,
+                 openai_api_key=None, gpt_model='gpt-4o', language='en', reader='general'):
     if language not in languages:
         raise ValueError("Language must be one of: " + ", ".join(languages))
+
+    if reader not in readers:
+        raise ValueError("Reader must be one of: " + ", ".join(readers))
 
     client = OpenAI(api_key=openai_api_key)
 
@@ -148,6 +166,7 @@ def _explain_bar(image, feature_names, feature_aliases=None, feature_description
                         "text": f"""
             SHAP refers to SHapley Additive exPlanations. Refer to the "A Unified Approach to Interpreting Model Predictions" paper by Scott Lundberg. This is about AI model training.
             Your job is to output an easy explanation about the image in the context of the SHAP values to better explain to readers the meaning of the bar plot.
+            f{readers[reader]}
             The given image is a bar plot of a features in the dataset and their corresponding average SHAP values.
             {'' if len(prompt_features) == 0 else f'Alias and description of the feature names:\n{_table(prompt_features)}\n'}
             {'' if additional_background is None else f'Context background of this model to be included in the explanation: {additional_background}.'}
@@ -169,11 +188,13 @@ def _explain_bar(image, feature_names, feature_aliases=None, feature_description
     response = json.loads(completion.choices[0].message.content)
     return response['explanation']
 
-def bar(shap_values, feature_aliases=None, feature_descriptions=None, additional_background=None, explain=True, show=True, openai_api_key=None, gpt_model = 'gpt-4o', language = 'en', **kwargs):
+
+def bar(shap_values, feature_aliases=None, feature_descriptions=None, additional_background=None, explain=True,
+        show=True, openai_api_key=None, gpt_model='gpt-4o', language='en', reader='general', **kwargs):
     """
         Displays a SHAP bar plot. This is a utility wrapper function that accepts feature aliases dictionary
         to easily alias some feature names that are otherwise retrieved by default through shap_values.feature_names.
-        By setting explain to True, this function will also return a string of narration containing explanation about the bar plot.
+        By setting `explain` to True, this function will also return a string of narration containing explanation about the bar plot.
         **kwargs is passed to shap.plots.bar function to modify the function.
 
         :param shap_values: a shap.Explanation or shap.Cohorts or dictionary of shap.Explanation instance retrieved from calling shap explainer.
@@ -185,7 +206,8 @@ def bar(shap_values, feature_aliases=None, feature_descriptions=None, additional
         :param openai_api_key: an OpenAI API key to use for API calls.
         :param gpt_model: a GPT model to use.
         :param language: a language code to use.
-        :return: anything returned  by shap.plots.waterfall, especially in the case of setting `show=False`.
+        :param reader: the reader level of comprehension, can be 'general' or 'expert'
+        :return: anything returned by shap.plots.waterfall, especially in the case of setting `show=False`.
         """
 
     if feature_aliases is None:
@@ -243,7 +265,9 @@ def bar(shap_values, feature_aliases=None, feature_descriptions=None, additional
         if show:
             plt.show()
 
-        return _explain_bar(data, original_feature_names, feature_aliases, feature_descriptions, additional_background, openai_api_key, gpt_model, language)
+        return _explain_bar(data, original_feature_names, feature_aliases, feature_descriptions, additional_background,
+                            openai_api_key, gpt_model, language, reader)
     else:
         if show:
             plt.show()
+        return None

@@ -2,10 +2,10 @@ from openai import OpenAI
 import shap
 import json
 import pandas as pd
-from .common import _table, languages
+from .common import _table, languages, readers
 
 
-def explain(shap_values: list[shap.Explanation], feature_aliases: dict, feature_descriptions: dict, openai_api_key = None, gpt_model = 'gpt-4o', additional_background = None, language = 'en'):
+def explain(shap_values: list[shap.Explanation], feature_aliases: dict, feature_descriptions: dict, openai_api_key = None, gpt_model = 'gpt-4o', additional_background = None, language = 'en', reader = 'general'):
     """
     Generates an explanation for each features according to the SHAP values. The generated narration can be displayed to
     end-users to better help end-users understand about the result of the SHAP values. Can be paired with SHAP visualizations
@@ -18,11 +18,15 @@ def explain(shap_values: list[shap.Explanation], feature_aliases: dict, feature_
     :param gpt_model: the OpenAI GPT model
     :param additional_background: additional narration containing background story of the model to increase explanation power
     :param language: the language of the response
+    :param reader: the reader level of comprehension, can be 'general' or 'expert'
     :return: summary (a string) anf a list of dictionary containing descriptions for each feature names
     """
 
     if language not in languages:
         raise ValueError("Language must be one of: " + ", ".join(languages))
+
+    if reader not in readers:
+        raise ValueError("Reader must be one of: " + ", ".join(readers))
 
     prompt_feature_aliases = []
     prompt_shap_values = []
@@ -53,6 +57,7 @@ def explain(shap_values: list[shap.Explanation], feature_aliases: dict, feature_
                 "content": f"""
     SHAP refers to SHapley Additive exPlanations. Refer to the "A Unified Approach to Interpreting Model Predictions" paper by Scott Lundberg. This is about AI model training.
     Your job is to output an explanation about each feature according to the SHAP values to better explain to readers the meaning of these SHAP values for each of the features and the result of the AI model.
+    f{readers[reader]}
     This is a table of feature names of the dataset, their aliases, and the description of the feature. If there is no description or alias, interpret the feature name yourself.
     {_table(prompt_feature_aliases)}
     You are now given a few samples of the AI model prediction, consists of the input value and SHAP value for each feature. 

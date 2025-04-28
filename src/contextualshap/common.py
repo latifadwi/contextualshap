@@ -186,6 +186,13 @@ languages = {
     'zu': 'Zulu'
 }
 
+readers = {
+    'general': 'Someone with little to no prior knowledge of the domain. They rely on everyday language and need intuitive'
+               ' explanations. You must explain in a way so that they understand basic concepts and implications relevant to them.',
+    'expert': 'Someone with deep, often formal, knowledge in the domain. Capable of critically assessing data, methods,'
+              ' and outcomes. You must explain to the readers so that they can evaluate, challenge, or build upon the information you provided.'
+}
+
 def _table(list_of_dicts):
     """Converts a list of dictionaries to markdown-formatted table.
 
